@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	
+	
+	<sub-flow name="orderSubFlow" doc:id="3647bc21-2412-4634-a3e6-fade339ceb02" >
+		<set-variable value="#[payload.OrderID]" doc:name="OrderID" doc:id="5a020cb9-d23a-4934-a063-82431e0ba8e5" variableName="OrderID"/>
+		<set-variable value="#[payload.OrderDate]" doc:name="OrderDate" doc:id="becfaefc-875c-4dc5-a80e-691d427cb620" variableName="OrderDate"/>
+		<set-variable value="#[payload.Price]" doc:name="Amount" doc:id="0711256c-1085-46dc-b142-f7a83725de4b" variableName="amount"/>
+		<set-variable value="#[payload.QtyOrder]" doc:name="Quantity" doc:id="5c6472ca-04a4-4303-bd4f-1ad0da4a5c6c" variableName="Quantity"/>
+	</sub-flow>
+	<sub-flow name="QueryParamSubFlow" doc:id="d47ffccb-2080-4e9e-a441-f08da814548b" >
+		<set-variable value="#[attributes.queryParams.CustID]" doc:name="Set Variable" doc:id="24a56a64-b259-4d66-9731-9a6732e0f29e" variableName="CustID"/>
+		<set-variable value="#[attributes.queryParams.OrderID]" doc:name="Set Variable" doc:id="78d93da3-01ed-49dd-8315-490b73ffced4" variableName="OrderID"/>
+		<set-variable value="#[attributes.queryParams.OrderDate]" doc:name="Set Variable" doc:id="60b1a62b-00a3-47d3-9324-84e19c7d725f" variableName="OrderDate"/>
+	</sub-flow>
+	<flow name="getAllComplaintsFlow" doc:id="478f21d1-9aab-484d-a560-e555079b0c42" >
+		<flow-ref doc:name="QueryParam" doc:id="84aa8679-1d5e-4543-b7a5-dd88b34f46a0" name="QueryParamSubFlow" />
+		<os:store doc:id="70c1cde5-74b5-4e02-b0ee-f315fc4e3834" key="array">
+			<os:value ><![CDATA[#[[]]]]></os:value>
+		</os:store>
+		<http:request method="GET" doc:name="complaints" doc:id="e3789923-2949-4316-9aff-f6622740fa69" config-ref="HTTP_Request_configuration" url="http://complaint-wsd-s.us-e2.cloudhub.io/complaints"/>
+		<foreach doc:name="For Each" doc:id="6603e699-8158-45ab-8465-fac0d0f387b6" >
+			<set-variable value="#[payload.OrderID]" doc:name="OrderID" doc:id="d3747300-450b-4803-aa44-3eda4e75acb2" variableName="OrderID"/>
+			<set-variable value="#[payload.ProductID]" doc:name="productID" doc:id="29264808-b71c-4dde-8131-14a2b53ebd68" variableName="productID"/>
+			<ee:transform doc:name="complaint var" doc:id="20b3a2a8-e191-437b-8d00-16be3038aaa6">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="complaints"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ComplaintID: payload.ComplaintID,
+	Description: payload.ComplaintDesc,
+	Status: payload.ComplaintStatus,
+	CustomerId: payload.CustID
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<http:request method="GET" doc:name="Orders" doc:id="a40f73f1-f62a-45dc-9e1c-ee86ef11b680" config-ref="HTTP_Request_configuration" url="http://order-pro-s.us-e2.cloudhub.io/orders/{Id}">
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	Id : vars.OrderID
+}]]]></http:uri-params>
+			</http:request>
+			<flow-ref doc:name="OrderSubFlow" doc:id="79e227b3-54d7-4275-ba82-bdcdb642d1d3" name="orderSubFlow" />
+			<http:request method="GET" doc:name="Products" doc:id="963f17ba-52fd-4f5c-9ae8-9a20338f66ea" config-ref="HTTP_Request_configuration" url="http://products-jkl.us-e2.cloudhub.io/products/{pid}">
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	pid : vars.ProductID
+}]]]></http:uri-params>
+			</http:request>
+			<ee:transform doc:name="Product var" doc:id="fad42d02-1d8b-4710-ad21-488a7a00114d" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{	
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="product" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ProductId: payload.ProductID,
+	ProductName: payload.ProductName,
+	ProductDesc: payload.ProductDesc
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="output var" doc:id="345cd6b3-ea1a-40cc-aa5d-2d81300fcf8b" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="outer" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ComplaintID: vars.complaints.ComplaintID,
+	ComplaintDesc: vars.complaints.Description,
+	status: vars.complaints.Status,
+	CustID: vars.complaints.CustomerId,
+	productDetails: vars.product,
+	orderDetails: {
+		OrderID: (vars.OrderID)[0],
+		OrderDate: (vars.OrderDate)[0],
+		amount: (vars.amount)[0],
+		Quantity: (vars.Quantity)[0]
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<os:retrieve doc:name="Retrieve" doc:id="17949d70-bf16-4446-b5a2-4dc6e71a662a" key="array"/>
+			<ee:transform doc:name="Transform Message" doc:id="47947737-b1b1-4833-9e94-6ca477b1d418" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<os:store doc:name="Store" doc:id="6fc91bbd-cd5a-4140-bf77-2ffa7ab19998" key="array">
+				<os:value ><![CDATA[#[payload + vars.outer]]]></os:value>
+			</os:store>
+		</foreach>
+		<os:retrieve doc:name="Retrieve" doc:id="4147cc9b-a77c-423b-9797-bd4f0ab99fc1" key="array"/>
+	</flow>
+	<flow name="getByComplaintsIDFlow" doc:id="f3adc064-155f-4f79-a912-a6a33157bace" >
+		<flow-ref doc:name="QueryParam" doc:id="1b772398-5d10-4faa-a53a-ee4df84b3c46" name="QueryParamSubFlow" />
+		<os:store doc:name="Store" doc:id="a6d1d4ac-bc27-4b97-a4c7-ff2f9562f622" key="array" >
+			<os:value ><![CDATA[#[[]]]]></os:value>
+		</os:store>
+		<http:request method="GET" doc:name="Complaints" doc:id="a0894d67-3d53-4b43-83f0-828269a840c2" config-ref="HTTP_Request_configuration" url="http://complaint-wsd-s.us-e2.cloudhub.io/complaints/{complaintId}" >
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	complaintId : vars.complaintId
+}]]]></http:uri-params>
+		</http:request>
+		<foreach doc:name="For Each" doc:id="b7d596c6-b6fc-42b8-acf1-03ae948acd8a" >
+			<set-variable value="#[payload.OrderID]" doc:name="OrderID" doc:id="9c0d520e-24d4-40ea-91f7-f0ea2ea69f68" variableName="OrderID" />
+			<set-variable value="#[payload.ProductID]" doc:name="productID" doc:id="821ba42c-8459-43f3-876b-cd60d9a97a03" variableName="productID" />
+			<ee:transform doc:name="complaint var" doc:id="043bcb37-33b3-44d7-979a-4bb58ec02cba" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="complaints" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ComplaintID: payload.ComplaintID,
+	Description: payload.ComplaintDesc,
+	Status: payload.ComplaintStatus,
+	CustomerId: payload.CustID
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<http:request method="GET" doc:name="Orders" doc:id="2a0d455c-2d45-43fa-b11b-497b4a3ea2cf" config-ref="HTTP_Request_configuration" url="http://order-pro-s.us-e2.cloudhub.io/orders/{Id}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	Id : vars.OrderID
+}]]]></http:uri-params>
+			</http:request>
+			<flow-ref doc:name="OrderSubFlow" doc:id="1de7e4fb-6eb2-488e-a84e-559260cdfd15" name="orderSubFlow" />
+			<http:request method="GET" doc:name="Products" doc:id="9e32075a-0d3a-42ca-9a45-3194d7554ba8" config-ref="HTTP_Request_configuration" url="http://products-jkl.us-e2.cloudhub.io/products/{pid}" >
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	pid : vars.ProductID
+}]]]></http:uri-params>
+			</http:request>
+			<ee:transform doc:name="Product var" doc:id="1363bf1d-b542-44cd-b9a2-0d2706372a87" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{	
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="product" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ProductId: payload.ProductID,
+	ProductName: payload.ProductName,
+	ProductDesc: payload.ProductDesc
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="output var" doc:id="e23be4a5-44b2-431b-a4a4-6adeb3def1e9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="outer" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ComplaintID: vars.complaints.ComplaintID,
+	ComplaintDesc: vars.complaints.Description,
+	status: vars.complaints.Status,
+	CustID: vars.complaints.CustomerId,
+	productDetails: vars.product,
+	orderDetails: {
+		OrderID: (vars.OrderID)[0],
+		OrderDate: (vars.OrderDate)[0],
+		amount: (vars.amount)[0],
+		Quantity: (vars.Quantity)[0]
+	}
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<os:retrieve doc:name="Retrieve" doc:id="88c51044-3245-4301-8ffd-94b23660381c" key="array" />
+			<ee:transform doc:name="Transform Message" doc:id="393df6df-9fb8-4b37-922a-f7e8ae82bebe" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<os:store doc:name="Store" doc:id="bdae7da9-028e-4a7b-9b05-2b6ed3f39d6d" key="array" >
+				<os:value ><![CDATA[#[payload + vars.outer]]]></os:value>
+			</os:store>
+		</foreach>
+		<os:retrieve doc:name="Retrieve" doc:id="266b0ab8-73ba-4372-b12d-7b6b569f6dc4" key="array" />
+	</flow>
+	<flow name="patchFlow" doc:id="18826003-f555-4cb0-9fd3-8ab6c681020f" >
+		<flow-ref doc:name="Flow Reference" doc:id="c2b75bed-87ce-4fd5-afa9-fef72ac7b09d" name="QueryParamSubFlow"/>
+		<http:request method="PATCH" doc:name="Request" doc:id="6796d9fa-9120-4e47-8a18-b24ccdcb582d" config-ref="HTTP_Request_configuration" url="http://complaint-wsd-s.us-e2.cloudhub.io/complaints/{complaintId}">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	complaintId : vars.complaintId
+}]]]></http:uri-params>
+		</http:request>
+		<set-variable value="#[payload.compStatus]" doc:name="Status" doc:id="ceb16c26-4e93-4f98-9399-65c08cbd4992" variableName="Status"/>
+		<db:update doc:id="92c3a2cf-3d84-4bd4-b64c-cf395aa1a9bb" config-ref="Database_Config">
+			<db:sql ><![CDATA[update complaints set compStatus = :status where CompliantId = :ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'status': vars.Status,
+	'ID': vars.complaintId
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="013bd7b6-faae-4fb2-927d-85d373a933c3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Complaint with ID:" ++ vars.complaintId as String ++ " has been updated"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postFlow" doc:id="ddfc8b28-fdcc-4103-aa28-d3fd49050c18" >
+		<flow-ref doc:name="Flow Reference" doc:id="b2408ee3-04ff-4db5-8f1d-7a3d9d4776ba" name="QueryParamSubFlow"/>
+		<http:request method="POST" doc:name="Request" doc:id="4208f52c-c2f8-450e-8757-edf352a0d484" config-ref="HTTP_Request_configuration" path="/complaints"/>
+	</flow>
+</mule>
