@@ -132,64 +132,6 @@ output application/json
     <flow name="get:\complaints:complaint-process-api-config">
 		<flow-ref doc:name="Flow Reference" doc:id="d3dd1ae6-9465-4084-bb04-80503149a642" name="getAllComplaintsFlow"/>
     </flow>
-    <flow name="get:\orders:complaint-process-api-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-[
-  {
-    OrderID: "O1001",
-    OrderDate: "20 Jan,2020"
-  }, 
-  {
-    OrderID: "O1002",
-    OrderDate: "20 Feb,2020"
-  }
-]]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="get:\products:complaint-process-api-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-[
-  {
-    ProductID: "P1001",
-    ProductName: "Casual Shirt",
-    ProductPrice: 280
-  }, 
-  {
-    ProductID: "P1002",
-    ProductName: "Nike air max",
-    ProductPrice: 6000
-  }
-]]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
-    <flow name="get:\orders\(Id):complaint-process-api-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="Id">attributes.uriParams.'Id'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  OrderID: "O1001",
-  OrderDate: "20 Jan,2020"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
-    </flow>
     <flow name="get:\complaints\(complaintId):complaint-process-api-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
             <ee:variables>
@@ -197,25 +139,6 @@ output application/json
             </ee:variables>
         </ee:transform>
 		<flow-ref doc:name="Flow Reference" doc:id="bab0c4b2-6a9c-42a0-a067-20e73a76206c" name="getByComplaintsIDFlow"/>
-    </flow>
-    <flow name="get:\products\(pid):complaint-process-api-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="pid">attributes.uriParams.'pid'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  ProductID: "P1001",
-  ProductName: "Casual Shirt",
-  ProductPrice: 280
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
     </flow>
     <flow name="post:\complaints:application\json:complaint-process-api-config">
 		<flow-ref doc:name="Flow Reference" doc:id="59eade27-05f4-4ec0-b068-61cc424e106d" name="postFlow"/>
